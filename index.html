@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive Quiz App - Floating Cards</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 text-white flex flex-col items-center p-6">
+
+  <h1 class="text-5xl font-extrabold mb-10 drop-shadow-lg">📝 Interactive Quiz App</h1>
+
+  <div id="quiz-container" class="w-full max-w-4xl bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-8 shadow-xl">
+
+    <!-- Quiz selection -->
+    <div id="quiz-selection" class="space-y-6">
+      <h2 class="text-3xl font-semibold text-yellow-400 mb-6">Choose a Quiz</h2>
+      <div id="quiz-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+    </div>
+
+    <!-- Quiz questions (hidden initially) -->
+    <div id="quiz-question" class="hidden flex flex-col space-y-6">
+      <div class="flex justify-between items-center">
+        <div id="progress" class="text-yellow-300 font-semibold"></div>
+        <button id="btnQuit" class="text-red-400 hover:text-red-600 font-bold transition">Quit</button>
+      </div>
+
+      <h3 id="question-text" class="text-2xl font-bold"></h3>
+
+      <form id="answers-form" class="space-y-4"></form>
+
+      <button id="btnNext" disabled
+        class="self-start bg-yellow-400 text-black font-semibold px-6 py-3 rounded-lg hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition">
+        Next
+      </button>
+    </div>
+
+    <!-- Results -->
+    <div id="quiz-results" class="hidden flex flex-col items-center space-y-6">
+      <h2 class="text-4xl font-extrabold text-yellow-400">Your Score: <span id="score"></span></h2>
+      <button id="btnRestart"
+        class="bg-yellow-400 text-black px-8 py-4 rounded-lg font-bold hover:bg-yellow-500 transition">Try Another Quiz</button>
+    </div>
+
+  </div>
+
+  <script>
+    // Quiz data (topics with 10 questions each)
+    const quizzes = [
+      {
+        id: 'general',
+        title: 'General Knowledge',
+        questions: [
+          { question: 'What is the capital of France?', options: ['Berlin', 'Madrid', 'Paris', 'Rome'], answer: 2 },
+          { question: 'Which planet is known as the Red Planet?', options: ['Earth', 'Mars', 'Jupiter', 'Saturn'], answer: 1 },
+          { question: 'Who wrote "Hamlet"?', options: ['Charles Dickens', 'William Shakespeare', 'Leo Tolstoy', 'Mark Twain'], answer: 1 },
+          { question: 'What is the tallest mountain in the world?', options: ['K2', 'Mount Everest', 'Kangchenjunga', 'Lhotse'], answer: 1 },
+          { question: 'Which ocean is the largest?', options: ['Atlantic', 'Indian', 'Pacific', 'Arctic'], answer: 2 },
+          { question: 'What currency is used in Japan?', options: ['Yen', 'Won', 'Dollar', 'Euro'], answer: 0 },
+          { question: 'Who painted the Mona Lisa?', options: ['Vincent Van Gogh', 'Leonardo da Vinci', 'Pablo Picasso', 'Michelangelo'], answer: 1 },
+          { question: 'What year did World War II end?', options: ['1945', '1939', '1918', '1963'], answer: 0 },
+          { question: 'Which country gifted the Statue of Liberty to the US?', options: ['France', 'England', 'Spain', 'Italy'], answer: 0 },
+          { question: 'What is the smallest country in the world?', options: ['Monaco', 'Vatican City', 'Nauru', 'San Marino'], answer: 1 },
+        ],
+      },
+      {
+        id: 'science',
+        title: 'Science',
+        questions: [
+          { question: 'What is the chemical symbol for water?', options: ['O2', 'H2O', 'CO2', 'NaCl'], answer: 1 },
+          { question: 'How many bones are in the adult human body?', options: ['206', '201', '198', '210'], answer: 0 },
+          { question: 'What gas do plants absorb?', options: ['Oxygen', 'Nitrogen', 'Carbon Dioxide', 'Hydrogen'], answer: 2 },
+          { question: 'What planet is closest to the sun?', options: ['Venus', 'Earth', 'Mercury', 'Mars'], answer: 2 },
+          { question: 'What is the process of cell division?', options: ['Meiosis', 'Mitosis', 'Photosynthesis', 'Osmosis'], answer: 1 },
+          { question: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Chloroplast'], answer: 1 },
+          { question: 'What element does "Fe" represent?', options: ['Fluorine', 'Iron', 'Francium', 'Fermium'], answer: 1 },
+          { question: 'How many planets in our solar system?', options: ['7', '8', '9', '10'], answer: 1 },
+          { question: 'Boiling point of water (°C)?', options: ['90', '95', '100', '110'], answer: 2 },
+          { question: 'Which organ pumps blood?', options: ['Liver', 'Kidney', 'Heart', 'Lungs'], answer: 2 },
+        ],
+      },
+      {
+        id: 'movies',
+        title: 'Movies',
+        questions: [
+          { question: 'Who directed "Jurassic Park"?', options: ['Steven Spielberg', 'James Cameron', 'Christopher Nolan', 'Ridley Scott'], answer: 0 },
+          { question: 'Movie featuring "Forrest Gump"?', options: ['Cast Away', 'Forrest Gump', 'The Green Mile', 'Saving Private Ryan'], answer: 1 },
+          { question: 'Year "The Matrix" released?', options: ['1997', '1999', '2000', '2001'], answer: 1 },
+          { question: 'Who played Jack in "Titanic"?', options: ['Leonardo DiCaprio', 'Brad Pitt', 'Johnny Depp', 'Tom Cruise'], answer: 0 },
+          { question: 'Which movie is about boxer Rocky?', options: ['Creed', 'Rocky', 'Million Dollar Baby', 'Ali'], answer: 1 },
+          { question: 'Best Picture Oscar winner 2020?', options: ['1917', 'Joker', 'Parasite', 'Ford v Ferrari'], answer: 2 },
+          { question: 'Who voiced Woody in "Toy Story"?', options: ['Tom Hanks', 'Tim Allen', 'Billy Crystal', 'John Ratzenberger'], answer: 0 },
+          { question: '"May the Force be with you" belongs to?', options: ['Star Trek', 'Star Wars', 'Guardians of the Galaxy', 'Avatar'], answer: 1 },
+          { question: 'Film with "The Dude"?', options: ['Pulp Fiction', 'The Big Lebowski', 'Fight Club', 'The Shawshank Redemption'], answer: 1 },
+          { question: 'Highest grossing (inflation adjusted)?', options: ['Titanic', 'Avengers: Endgame', 'Gone with the Wind', 'Avatar'], answer: 2 },
+        ],
+      },
+      {
+        id: 'coding',
+        title: 'Coding',
+        questions: [
+          { question: 'What does HTML stand for?', options: ['HyperText Markup Language', 'Home Tool Markup Language', 'Hyperlinks and Text Markup Language', 'None'], answer: 0 },
+          { question: 'Language used for web scripting?', options: ['HTML', 'CSS', 'JavaScript', 'Python'], answer: 2 },
+          { question: 'CSS stands for?', options: ['Cascading Style Sheets', 'Colorful Style Sheets', 'Creative Style Sheets', 'Computer Style Sheets'], answer: 0 },
+          { question: 'Who developed JavaScript?', options: ['Microsoft', 'Netscape', 'Sun Microsystems', 'IBM'], answer: 1 },
+          { question: 'JS comment symbol?', options: ['//', '/* */', '#', '<!-- -->'], answer: 0 },
+          { question: 'Keyword to declare constant in JS?', options: ['let', 'var', 'const', 'constant'], answer: 2 },
+          { question: 'JSON stands for?', options: ['JavaScript Object Notation', 'Java Source Open Network', 'JavaScript Online Network', 'JavaScript Object Node'], answer: 0 },
+          { question: 'HTML tag to link external JS?', options: ['<js>', '<script>', '<javascript>', '<link>'], answer: 1 },
+          { question: 'Output of 2 + "2" in JS?', options: ['4', '"4"', '"22"', 'Error'], answer: 2 },
+          { question: 'Method to parse JSON string?', options: ['JSON.parse()', 'JSON.stringify()', 'JSON.convert()', 'JSON.toObject()'], answer: 0 },
+        ],
+      },
+      {
+        id: 'it',
+        title: 'IT',
+        questions: [
+          { question: 'CPU stands for?', options: ['Central Processing Unit', 'Computer Personal Unit', 'Central Performance Unit', 'Computer Processing Unit'], answer: 0 },
+          { question: 'Main function of OS?', options: ['Manage hardware', 'Run applications', 'Store data', 'Provide security'], answer: 0 },
+          { question: 'RAM stands for?', options: ['Random Access Memory', 'Read Access Memory', 'Run Access Memory', 'Random Application Memory'], answer: 0 },
+          { question: 'Device to connect to internet?', options: ['Router', 'Printer', 'Monitor', 'Scanner'], answer: 0 },
+          { question: 'Primary protocol for sending email?', options: ['HTTP', 'SMTP', 'FTP', 'POP3'], answer: 1 },
+          { question: 'Port number HTTP uses?', options: ['80', '443', '21', '25'], answer: 0 },
+          { question: 'NOT an input device?', options: ['Keyboard', 'Mouse', 'Monitor', 'Scanner'], answer: 2 },
+          { question: 'IP stands for?', options: ['Internet Protocol', 'Internal Process', 'Internet Port', 'Interface Protocol'], answer: 0 },
+          { question: 'Antivirus is what type of software?', options: ['Utility', 'System', 'Application', 'Malware'], answer: 0 },
+          { question: 'Tech for virtual machines?', options: ['Docker', 'VirtualBox', 'Git', 'Kubernetes'], answer: 1 },
+        ],
+      },
+      {
+        id: 'music',
+        title: 'Music',
+        questions: [
+          { question: 'Who is the "King of Pop"?', options: ['Elvis Presley', 'Michael Jackson', 'Prince', 'Freddie Mercury'], answer: 1 },
+          { question: 'Instrument with keys, pedals, strings?', options: ['Guitar', 'Piano', 'Violin', 'Drums'], answer: 1 },
+          { question: 'Band released "Abbey Road"?', options: ['The Beatles', 'Pink Floyd', 'Led Zeppelin', 'Queen'], answer: 0 },
+          { question: 'Composer of "Four Seasons"?', options: ['Bach', 'Vivaldi', 'Mozart', 'Beethoven'], answer: 1 },
+          { question: 'Term for group of three musicians?', options: ['Duo', 'Trio', 'Quartet', 'Solo'], answer: 1 },
+          { question: 'Genre originated in Jamaica?', options: ['Reggae', 'Jazz', 'Blues', 'Country'], answer: 0 },
+          { question: 'Lead singer of U2?', options: ['Bono', 'Sting', 'Mick Jagger', 'Freddie Mercury'], answer: 0 },
+          { question: 'Highest male singing voice?', options: ['Baritone', 'Bass', 'Tenor', 'Alto'], answer: 2 },
+          { question: 'Known as "king of instruments"?', options: ['Organ', 'Piano', 'Violin', 'Harp'], answer: 0 },
+          { question: 'Which classical composer was deaf?', options: ['Mozart', 'Beethoven', 'Bach', 'Chopin'], answer: 1 },
+        ],
+      },
+      {
+        id: 'anime',
+        title: 'Anime',
+        questions: [
+          { question: 'Main character in "Naruto"?', options: ['Sasuke', 'Naruto Uzumaki', 'Kakashi', 'Sakura'], answer: 1 },
+          { question: 'What is "One Piece"?', options: ['A Manga', 'A TV Series', 'A Movie', 'A Game'], answer: 0 },
+          { question: 'Who is the Titan shifter in "Attack on Titan"?', options: ['Eren Yeager', 'Armin Arlert', 'Levi', 'Mikasa'], answer: 0 },
+          { question: 'Anime featuring “Death Note”?', options: ['Bleach', 'Naruto', 'Death Note', 'One Punch Man'], answer: 2 },
+          { question: 'What power does Goku use?', options: ['Kamehameha', 'Rasengan', 'Bankai', 'Getsuga Tensho'], answer: 0 },
+          { question: 'Which anime is about alchemy?', options: ['Fullmetal Alchemist', 'Dragon Ball Z', 'Naruto', 'Bleach'], answer: 0 },
+          { question: 'Who is Sailor Moon?', options: ['Usagi Tsukino', 'Rei Hino', 'Ami Mizuno', 'Minako Aino'], answer: 0 },
+          { question: 'Main antagonist in "Dragon Ball Z"?', options: ['Vegeta', 'Frieza', 'Cell', 'Majin Buu'], answer: 1 },
+          { question: 'Who created "One Punch Man"?', options: ['ONE', 'Eiichiro Oda', 'Masashi Kishimoto', 'Tite Kubo'], answer: 0 },
+          { question: 'Studio that made "My Hero Academia"?', options: ['Bones', 'Madhouse', 'Pierrot', 'Sunrise'], answer: 0 },
+        ],
+      },
+    ];
+
+    // DOM refs
+    const quizSelectionDiv = document.getElementById('quiz-selection');
+    const quizListDiv = document.getElementById('quiz-list');
+    const quizQuestionDiv = document.getElementById('quiz-question');
+    const questionText = document.getElementById('question-text');
+    const answersForm = document.getElementById('answers-form');
+    const btnNext = document.getElementById('btnNext');
+    const progressText = document.getElementById('progress');
+    const quizResultsDiv = document.getElementById('quiz-results');
+    const scoreSpan = document.getElementById('score');
+    const btnRestart = document.getElementById('btnRestart');
+    const btnQuit = document.getElementById('btnQuit');
+
+    let currentQuiz = null;
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    // Render floating cards for quizzes
+    function renderQuizList() {
+      quizListDiv.innerHTML = '';
+      quizzes.forEach(q => {
+        const card = document.createElement('button');
+        card.className = `bg-yellow-400 text-black rounded-lg p-6 shadow-lg hover:shadow-2xl hover:scale-105 transition transform flex flex-col justify-center items-center font-bold text-lg`;
+        card.innerHTML = `
+          <div class="mb-2">${q.title}</div>
+          <div class="text-sm text-gray-800">${q.questions.length} Questions</div>
+        `;
+        card.onclick = () => startQuiz(q.id);
+        quizListDiv.appendChild(card);
+      });
+    }
+
+    // Start quiz
+    function startQuiz(quizId) {
+      currentQuiz = quizzes.find(q => q.id === quizId);
+      currentQuestionIndex = 0;
+      score = 0;
+      quizSelectionDiv.classList.add('hidden');
+      quizResultsDiv.classList.add('hidden');
+      quizQuestionDiv.classList.remove('hidden');
+      renderQuestion();
+    }
+
+    // Render current question
+    function renderQuestion() {
+      btnNext.disabled = true;
+      const questionObj = currentQuiz.questions[currentQuestionIndex];
+      questionText.textContent = questionObj.question;
+      progressText.textContent = `Question ${currentQuestionIndex + 1} of ${currentQuiz.questions.length}`;
+
+      answersForm.innerHTML = '';
+      questionObj.options.forEach((option, idx) => {
+        const optionId = `option${idx}`;
+        const div = document.createElement('div');
+        div.className = 'flex items-center space-x-4';
+
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'answer';
+        input.id = optionId;
+        input.value = idx;
+        input.className = 'cursor-pointer w-5 h-5 text-yellow-400';
+        input.onchange = () => btnNext.disabled = false;
+
+        const label = document.createElement('label');
+        label.htmlFor = optionId;
+        label.textContent = option;
+        label.className = 'cursor-pointer select-none text-lg';
+
+        div.appendChild(input);
+        div.appendChild(label);
+        answersForm.appendChild(div);
+      });
+    }
+
+    // Next button click handler
+    btnNext.onclick = () => {
+      const selected = answersForm.answer.value;
+      if (selected === undefined) return;
+
+      if (parseInt(selected) === currentQuiz.questions[currentQuestionIndex].answer) {
+        score++;
+      }
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex >= currentQuiz.questions.length) {
+        showResults();
+      } else {
+        renderQuestion();
+      }
+    };
+
+    // Show quiz results
+    function showResults() {
+      quizQuestionDiv.classList.add('hidden');
+      quizResultsDiv.classList.remove('hidden');
+      scoreSpan.textContent = `${score} / ${currentQuiz.questions.length}`;
+    }
+
+    // Restart button handler
+    btnRestart.onclick = () => {
+      quizResultsDiv.classList.add('hidden');
+      quizSelectionDiv.classList.remove('hidden');
+    };
+
+    // Quit button handler
+    btnQuit.onclick = () => {
+      if (confirm('Are you sure you want to quit? Your progress will be lost.')) {
+        quizQuestionDiv.classList.add('hidden');
+        quizResultsDiv.classList.add('hidden');
+        quizSelectionDiv.classList.remove('hidden');
+      }
+    };
+
+    // Initialize
+    renderQuizList();
+  </script>
+
+</body>
+</html>
