@@ -36,7 +36,7 @@ Welcome to the Interactive Multi-Topic Quiz App! This is a fun, responsive, and 
 ## Live Demo
 
 Check out the live app here:  
-**[INSERT_MY_GITHUB_PAGES_LINK_HERE]**
+**[https://amcdonald9.github.io/mult-quiz-js-tailwind-s/]**
 
 ---
 
